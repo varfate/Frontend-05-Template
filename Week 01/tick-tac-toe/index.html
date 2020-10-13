@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicTacToe</title>
+  <style>
+    .cell {
+      width: 100px;
+      height: 100px;
+      margin: 1px;
+      line-height: 100px;
+      font-size: 50px;
+      background: green;
+      display: inline-block;
+      vertical-align: middle;
+      text-align: center;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="board"></div>
+  <div id="notice"></div>
+</body>
+<script>
+  const INIT_COLOR = 2;
+  const pattern = [
+    0, 0, 0,
+    0, 1, 0,
+    0, 0, 0,
+  ];
+
+  const TEXT_MAP = new Map([
+    [0, ''],
+    [1, '⭕️'],
+    [2, '❌']
+  ]);
+
+  let color = INIT_COLOR;
+  let isWin = false;
+  const board = document.getElementById('board');
+  const notice = document.getElementById('notice');
+  const show = () => {
+    board.innerHTML = '';
+
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const cell = document.createElement('div');
+        const patternVal = pattern[i * 3 + j];
+        cell.innerText = TEXT_MAP.get(patternVal);
+        cell.classList.add('cell');
+        cell.addEventListener('click', () => {
+          if (patternVal) return;
+          if (isWin) return;
+          userMove(i, j);
+        })
+        board.appendChild(cell);
+      }
+      board.appendChild(document.createElement('br'));
+    }
+  }
+  show();
+  const userMove = (x, y) => {
+    pattern[x * 3 + y] = color;
+    isWin = check(pattern, color);
+    if (isWin) {
+      notice.innerText = `winner is ${TEXT_MAP.get(color)}`
+    }
+    show();
+    color = 3 - color;
+    computerMove();
+  }
+
+  const computerMove = () => {
+    const choice = bestChoice(pattern, color);
+    const [x, y] = choice.point;
+    console.log(x,y)
+    pattern[x * 3 + y] = color;
+    isWin = check(pattern, color);
+    if (isWin) {
+      notice.innerText = `winner is ${TEXT_MAP.get(color)}`
+    }
+    show();
+    color = 3 - color;
+  }
+
+  const check = (pattern, color) => {
+    let win = true;
+    for (let i = 0; i < 3; i++) {
+      win = true;
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i * 3 + j] !== color) {
+          win = false;
+        }
+      }
+      if (win) return true;
+    }
+
+    for (let i = 0; i < 3; i++) {
+      win = true;
+      for (let j = 0; j < 3; j++) {
+        if (pattern[j][i] !== color) {
+          win = false;
+        }
+      }
+      if (win) return true;
+    }
+
+    win = true;
+    for (let j = 0; j < 3; j++) {
+      if (pattern[j * 3 + 2 - j] !== color) {
+        win = false;
+      }
+    }
+    if (win) return true;
+
+    win = true;
+    for (let j = 0; j < 3; j++) {
+      if (pattern[j * 3 + j] !== color) {
+        win = false;
+      }
+    }
+    return win;
+  }
+
+  const isObject = (target) => {
+    return typeof target === 'object' || typeof target === 'function' && target !== null;
+  }
+
+  const clone = (target) => {
+    return Object.create(target);
+  }
+
+  const willWin = (pattern, color) => {
+    const _pattern = clone(pattern);
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i * 3 + j] === 0) {
+          _pattern[i * 3 + j] = color;
+          if (check(_pattern, color)) {
+            return [i, j];
+          };
+          _pattern[i * 3 + j] = 0;
+        }
+      }
+    }
+    return null;
+  }
+
+  const bestChoice = (pattern, color) => {
+    let point = willWin(pattern, color);
+    if (point) {
+      return {
+        point,
+        result: 1,
+      }
+    }
+    let result = -1;
+    let clonedPattern = clone(pattern);
+    outer: for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        if (pattern[i * 3 + j] !== 0) {
+          continue;
+        }
+        clonedPattern[i * 3 + j] = color;
+        const opp = bestChoice(clonedPattern, 3 - color);
+        clonedPattern[i * 3 + j] = 0;
+        if (-opp.result >= result) {
+          result = -opp.result;
+          point = [i, j];
+        }
+        if (result === 1) {
+          break outer;
+        }
+      }
+    }
+    return {
+      point,
+      result: point ? result : 0,
+    }
+  }
+</script>
+
+</html>`

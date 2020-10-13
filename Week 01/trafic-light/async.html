@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交通灯</title>
+  <style>
+    .light {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      border-radius: 100%;
+      background: gray;
+    }
+
+    .red.active {
+      background: red;
+    }
+
+    .green.active {
+      background: green;
+    }
+
+    .yellow.active {
+      background: yellow;
+    }
+  </style>
+</head>
+
+<body>
+  <ul>
+    <li class="light green"></li>
+    <li class="light yellow"></li>
+    <li class="light red"></li>
+  </ul>
+</body>
+<script>
+  const lights = document.querySelectorAll('.light');
+  const resetAll = () => {
+    for (let light of lights) {
+      light.classList.remove('active');
+    }
+  }
+  const greenLight = document.querySelector('.green')
+  const yellowLight = document.querySelector('.yellow')
+  const redLight = document.querySelector('.red')
+
+  const active = (el) => () => {
+    resetAll();
+    el.classList.add('active');
+  }
+
+  const green = active(greenLight);
+  const yellow = active(yellowLight);
+  const red = active(redLight);
+
+  const sleep = (t) => new Promise((resolve) => {
+    setTimeout(resolve, t)
+  });
+
+  const go = async () => {
+    green();
+    await sleep(3000);
+    yellow();
+    await sleep(1000);
+    red();
+    await sleep(2000);
+    go();
+  }
+
+  go();
+</script>
+
+</html>
