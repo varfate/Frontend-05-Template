@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>寻路算法</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      min-height: 720px;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    #container {
+      width: 701px;
+      line-height: 7px;
+    }
+
+    li {
+      width: 6px;
+      height: 6px;
+      display: inline-block;
+      border-right: 1px solid white;
+      border-bottom: 1px solid white;
+      background: #ccc;
+      vertical-align: top;
+    }
+
+    .block {
+      background: black;
+    }
+
+    .light {
+      background: green;
+    }
+
+    .end {
+      background: red !important;
+    }
+
+    .path {
+      background: blue;
+       !important;
+    }
+  </style>
+</head>
+
+<body>
+  <ul id="container"></ul>
+  <div>
+    <button onclick="localStorage.map = JSON.stringify(map.map((item) => item === 1 ? 1 : 0))">保存地图</button>
+    <!-- <button onclick="localStorage.removeItem('map')">重置</button> -->
+  </div>
+
+</body>
+<script>
+  class Sorted {
+    constructor(data, compare) {
+      this.data = [...data];
+      this.compare = compare || ((a, b) => a - b);
+    }
+    take() {
+      if (!this.data.length) return;
+      let min = this.data[0];
+      let minIndex = 0;
+      for (let i = 1; i < this.data.length; i++) {
+        if (this.compare(this.data[i], min) < 0) {
+          min = this.data[i];
+          minIndex = i;
+        }
+      }
+      this.data[minIndex] = this.data[this.data.length - 1];
+      this.data.pop();
+      return min;
+    }
+    give(v) {
+      this.data.push(v);
+    }
+    get length() {
+      return this.data.length;
+    }
+  }
+
+  const container = document.getElementById('container');
+  const map = localStorage.map ? JSON.parse(localStorage.map) : Array(10000).fill(0);
+
+  let mousedown = false;
+  let clear = false;
+
+  const getIndex = (x, y) => x * 100 + y;
+
+  const show = () => {
+    for (let x = 0; x < 100; x++) {
+      for (let y = 0; y < 100; y++) {
+        const index = getIndex(x, y);
+        const cell = document.createElement('li');
+        if (map[index] === 1) {
+          cell.classList.add('block');
+        }
+        cell.addEventListener('mousemove', () => {
+          if (!mousedown) return;
+          if (clear) {
+            map[index] = 0;
+            cell.classList.remove('block')
+          } else {
+            map[index] = 1
+            cell.classList.add('block')
+          }
+        });
+        container.appendChild(cell);
+      }
+    }
+  }
+  show();
+
+  const sleep = (t) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, t)
+    });
+
+  // 所有可走的路
+  const findPath = async (start, end) => {
+    const distance = (point) => {
+      return Math.abs(point[0] - end[0]) ** 2 + Math.abs(point[1] - end[1]) ** 2;
+    }
+    const queue = new Sorted([start], (a, b) => distance(a) - distance(b));
+    // 每个坐标的上一个坐标
+    const prePosMap = new Map();
+
+    container.children[getIndex(...end)].classList.add('end');
+
+    const insert = async (x, y, pre) => {
+      const index = getIndex(x, y);
+      if (map[index] !== 0) return;
+      if (x < 0 || x >= 100 || y < 0 || y >= 100) return;
+      map[index] = 2;
+      // 查看渲染过程
+      // await sleep(30);
+      container.children[index].classList.add('light')
+      prePosMap.set(getIndex(x, y), pre);
+      queue.give([x, y]);
+    }
+    while (queue.length) {
+      const [x, y] = pre = queue.take();
+
+      if (x === end[0] && y === end[1]) {
+        const path = [];
+        let pos = [x, y];
+        while (pos[0] !== start[0] && pos[1] !== start[1]) {
+          const index = getIndex(...pos);
+          pos = prePosMap.get(index);
+          path.push(pos);
+          // await sleep(30);
+          container.children[index].classList.add('path');
+        }
+        return path;
+      };
+
+      const index = getIndex(x, y);
+
+      // 横纵向
+      await insert(x, y - 1, pre);
+      await insert(x, y + 1, pre);
+      await insert(x - 1, y, pre);
+      await insert(x + 1, y, pre);
+
+      // 斜向
+      await insert(x + 1, y + 1, pre);
+      await insert(x + 1, y - 1, pre);
+      await insert(x - 1, y + 1, pre);
+      await insert(x - 1, y - 1, pre);
+    }
+    return null;
+  }
+
+  container.addEventListener('mousedown', (e) => {
+    mousedown = true;
+    clear = (e.which === 3)
+  })
+  document.addEventListener('mouseup', () => {
+    mousedown = false;
+  })
+  document.addEventListener('contextmenu', (e) => e.preventDefault())
+</script>
+
+</html>
