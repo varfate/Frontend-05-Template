@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拖拽</title>
+  <style>
+    #box {
+      width: 100px;
+      height: 100px;
+      display: inline-block;
+      background: green;
+      cursor: move;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div id="box"></div>
+</body>
+<script>
+  const box = document.getElementById('box');
+  const container = document.getElementById('container');
+  let containerText = '';
+  for (let i = 0; i < 1000; i++) {
+    containerText += '文本 '
+  }
+  container.innerText = containerText;
+
+  // 下一次拖拽是在上一次拖拽的移动的基础上,需要记录上一次拖拽到的位置
+  let baseX = baseY = 0;
+  
+  // 获取最近最近的range
+  const getNearest = (x, y) => {
+    let min = Infinity;
+    let nearestRange = null;
+    for (let range of ranges) {
+      const rect = range.getBoundingClientRect();
+      const distance = (x - rect.x) ** 2 + (y - rect.y) ** 2;
+      if (distance < min) {
+        min = distance;
+        nearestRange = range;
+      }
+    }
+    return nearestRange;
+  }
+  // 每个字符都是range
+  const ranges = [];
+  for (let i = 0; i < container.childNodes[0].textContent.length; i++) {
+    let range = document.createRange();
+    range.setStart(container.childNodes[0], i);
+    range.setEnd(container.childNodes[0], i);
+    ranges.push(range);
+  }
+
+  box.addEventListener('mousedown', (e) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const onMove = (e) => {
+      const range = getNearest(e.clientX, e.clientY);
+      // 不需要弹出,每次插入都会自动弹出
+      range.insertNode(box);
+      // box.style.transform = `translate(${baseX + e.clientX - startX}px, ${baseY + e.clientY - startY}px)`;
+    }
+    const onUp = (e) => {
+      baseX += e.clientX - startX;
+      baseY += e.clientY - startY;
+      // 移除监听
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('mousemove', onMove);
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  });
+  document.addEventListener('selectstart', e => e.preventDefault());
+</script>
+
+</html>
